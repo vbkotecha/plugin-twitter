@@ -49,12 +49,19 @@ export const TwitterPlugin: Plugin = {
       }
     } else if (mode === "broker") {
       const brokerUrl = getSetting(runtime, "TWITTER_BROKER_URL");
-      if (!brokerUrl) {
+      const brokerApiKey = getSetting(runtime, "TWITTER_BROKER_API_KEY");
+      const missing: string[] = [];
+      if (!brokerUrl) missing.push("TWITTER_BROKER_URL");
+      if (!brokerApiKey) missing.push("TWITTER_BROKER_API_KEY");
+
+      if (missing.length) {
         logger.warn(
-          "TWITTER_AUTH_MODE=broker requires TWITTER_BROKER_URL (broker auth is not implemented yet).",
+          "Twitter broker auth is selected (TWITTER_AUTH_MODE=broker). Missing: " +
+            `${missing.join(", ")}. ` +
+            "Set TWITTER_BROKER_URL and TWITTER_BROKER_API_KEY.",
         );
       } else {
-        logger.log("ℹ️ Twitter broker mode configured (stub; not functional yet)");
+        logger.log("✅ Twitter broker configuration found");
       }
     } else {
       logger.warn(

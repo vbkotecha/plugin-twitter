@@ -51,6 +51,41 @@ describe("TwitterAuth", () => {
         expect(client).toBe(mockTwitterApi);
       });
     });
+
+    it("initializes OAuth2 client with bearer token", async () => {
+      const oauthAuth = new TwitterAuth({
+        mode: "oauth",
+        getAccessToken: async () => "oauth-token",
+      } as any);
+
+      await oauthAuth.getV2Client();
+      expect(TwitterApi).toHaveBeenCalledWith("oauth-token");
+    });
+
+    it("reuses OAuth2 client when token is unchanged", async () => {
+      const getAccessToken = vi.fn(async () => "oauth-token");
+      const oauthAuth = new TwitterAuth({
+        mode: "oauth",
+        getAccessToken,
+      } as any);
+
+      await oauthAuth.getV2Client();
+      await oauthAuth.getV2Client();
+      expect(TwitterApi).toHaveBeenCalledTimes(1);
+      expect(getAccessToken).toHaveBeenCalledTimes(2);
+    });
+
+    it("throws when client is not initialized", async () => {
+      const oauthAuth = new TwitterAuth({
+        mode: "oauth",
+        getAccessToken: async () => "oauth-token",
+      } as any);
+
+      (oauthAuth as any).ensureClientInitialized = vi.fn(async () => {});
+      await expect(oauthAuth.getV2Client()).rejects.toThrow(
+        "Twitter API client not initialized",
+      );
+    });
   });
 
   describe("isLoggedIn", () => {
@@ -79,6 +114,17 @@ describe("TwitterAuth", () => {
 
       const isLoggedIn = await auth.isLoggedIn();
       expect(isLoggedIn).toBe(false);
+    });
+
+    it("returns false when not authenticated after initialization", async () => {
+      const oauthAuth = new TwitterAuth({
+        mode: "oauth",
+        getAccessToken: async () => "oauth-token",
+      } as any);
+
+      (oauthAuth as any).ensureClientInitialized = vi.fn(async () => {});
+      const loggedIn = await oauthAuth.isLoggedIn();
+      expect(loggedIn).toBe(false);
     });
   });
 
@@ -188,6 +234,16 @@ describe("TwitterAuth", () => {
       const profile = await auth.me();
 
       expect(profile).toBeUndefined();
+    });
+
+    it("throws when client is not initialized", async () => {
+      const oauthAuth = new TwitterAuth({
+        mode: "oauth",
+        getAccessToken: async () => "oauth-token",
+      } as any);
+
+      (oauthAuth as any).ensureClientInitialized = vi.fn(async () => {});
+      await expect(oauthAuth.me()).rejects.toThrow("Not authenticated");
     });
   });
 

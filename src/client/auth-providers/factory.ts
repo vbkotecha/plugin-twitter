@@ -13,7 +13,7 @@ function normalizeMode(v: string | undefined | null): TwitterAuthMode {
 
 export function getTwitterAuthMode(runtime?: IAgentRuntime, state?: any): TwitterAuthMode {
   return normalizeMode(
-    state?.TWITTER_AUTH_MODE ?? getSetting(runtime ?? null, "TWITTER_AUTH_MODE") ?? "env",
+    state?.TWITTER_AUTH_MODE ?? getSetting(runtime ?? null, "TWITTER_AUTH_MODE"),
   );
 }
 

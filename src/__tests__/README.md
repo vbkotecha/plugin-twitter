@@ -12,7 +12,8 @@ __tests__/
 │   ├── auth.test.ts             # Unit tests for TwitterAuth
 │   └── environment.test.ts      # Unit tests for config validation
 └── e2e/
-    └── twitter-integration.test.ts # End-to-end tests with real API
+    ├── broker-auth.test.ts          # End-to-end broker auth against local server
+    └── twitter-integration.test.ts  # End-to-end tests with real API
 ```
 
 ## Running Tests
@@ -34,21 +35,24 @@ npm test -- --coverage
 
 ### End-to-End Tests
 
-E2E tests require real Twitter Developer API credentials and currently exercise **TWITTER_AUTH_MODE=env** (OAuth 1.0a keys/tokens).
+E2E tests include:
+- A local broker auth test (mock broker server)
+- A mocked Twitter API flow that exercises the full plugin stack without real credentials
+
+If you want to manually test broker mode without a real broker, use the mock broker script:
+
+```bash
+npm run mock:broker
+```
 The plugin also supports **TWITTER_AUTH_MODE=oauth** (OAuth 2.0 PKCE “login + approve”), but that flow is interactive and is not covered by these E2E tests.
 
 #### Prerequisites
 
-1. **Twitter Developer Account**: You need a Twitter Developer account with an app created
-2. **API Credentials (env mode)**: You need all four credentials:
-   - API Key (Consumer Key)
-   - API Secret Key (Consumer Secret)
-   - Access Token
-   - Access Token Secret
+None for the mocked suite. Real credentials are only needed if you add/enable real Twitter integration tests.
 
 #### Setup
 
-1. Create a `.env.test` file in the plugin root directory:
+1. (Optional) Create a `.env.test` file in the plugin root directory if you want to run real Twitter integration tests:
 
 ```env
 # Twitter API v2 Credentials
@@ -64,7 +68,7 @@ TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret_here
 #### Running E2E Tests
 
 ```bash
-# Run E2E tests (will skip if no credentials)
+# Run E2E tests (mocked)
 npm test e2e
 
 # Run with verbose output

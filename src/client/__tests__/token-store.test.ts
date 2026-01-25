@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FileTokenStore, RuntimeCacheTokenStore } from "../auth-providers/token-store";
+import {
+  FileTokenStore,
+  RuntimeCacheTokenStore,
+  chooseDefaultTokenStore,
+} from "../auth-providers/token-store";
 import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -35,6 +39,68 @@ describe("token-store", () => {
       const loaded = await store.load();
       expect(loaded).toBeNull();
 
+      await store.clear();
+    });
+
+    it("returns null when file is missing", async () => {
+      const path = join(tmpdir(), `twitter-oauth2-tokens-${Date.now()}-missing.json`);
+      const store = new FileTokenStore(path);
+      const loaded = await store.load();
+      expect(loaded).toBeNull();
+      await store.clear();
+    });
+
+    it("returns null for invalid token shapes", async () => {
+      const path = join(tmpdir(), `twitter-oauth2-tokens-${Date.now()}-invalid.json`);
+      await fs.writeFile(path, JSON.stringify({ access_token: 123 }), "utf-8");
+      const store = new FileTokenStore(path);
+      const loaded = await store.load();
+      expect(loaded).toBeNull();
+      await store.clear();
+    });
+
+    it("returns null when parsed value is not an object", async () => {
+      const path = join(tmpdir(), `twitter-oauth2-tokens-${Date.now()}-primitive.json`);
+      await fs.writeFile(path, JSON.stringify("nope"), "utf-8");
+      const store = new FileTokenStore(path);
+      const loaded = await store.load();
+      expect(loaded).toBeNull();
+      await store.clear();
+    });
+
+    it("returns null when expires_at is invalid", async () => {
+      const path = join(tmpdir(), `twitter-oauth2-tokens-${Date.now()}-expires.json`);
+      await fs.writeFile(
+        path,
+        JSON.stringify({ access_token: "token", expires_at: "bad" }),
+        "utf-8",
+      );
+      const store = new FileTokenStore(path);
+      const loaded = await store.load();
+      expect(loaded).toBeNull();
+      await store.clear();
+    });
+
+    it("exposes a stable default path", () => {
+      const defaultPath = FileTokenStore.defaultPath();
+      expect(defaultPath).toContain(".eliza");
+      expect(defaultPath).toContain("oauth2.tokens.json");
+    });
+
+    it("ignores chmod errors during save", async () => {
+      const path = join(tmpdir(), `twitter-oauth2-tokens-${Date.now()}-chmod.json`);
+      const store = new FileTokenStore(path);
+      const chmodSpy = vi
+        .spyOn(fs, "chmod")
+        .mockRejectedValueOnce(new Error("chmod failed"));
+
+      await store.save({
+        access_token: "access",
+        refresh_token: "refresh",
+        expires_at: Date.now() + 60_000,
+      });
+
+      chmodSpy.mockRestore();
       await store.clear();
     });
   });
@@ -80,6 +146,36 @@ describe("token-store", () => {
       const loaded = await store.load();
       expect(loaded).toBeNull();
       expect(runtime.setCache).toHaveBeenCalledWith(expect.any(String), undefined);
+    });
+
+    it("returns null when runtime cache throws", async () => {
+      runtime.getCache = vi.fn(async () => {
+        throw new Error("cache down");
+      });
+
+      const store = new RuntimeCacheTokenStore(runtime);
+      const loaded = await store.load();
+      expect(loaded).toBeNull();
+    });
+  });
+
+  describe("chooseDefaultTokenStore", () => {
+    it("uses runtime cache when available", () => {
+      const runtime: any = {
+        agentId: "agent-123",
+        getCache: vi.fn(),
+        setCache: vi.fn(),
+      };
+      const store = chooseDefaultTokenStore(runtime);
+      expect(store).toBeInstanceOf(RuntimeCacheTokenStore);
+    });
+
+    it("falls back to file store when runtime cache is unavailable", () => {
+      const runtime: any = {
+        agentId: "agent-123",
+      };
+      const store = chooseDefaultTokenStore(runtime);
+      expect(store).toBeInstanceOf(FileTokenStore);
     });
   });
 });

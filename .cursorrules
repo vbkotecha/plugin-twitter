@@ -1,0 +1,63 @@
+# Cursor Rules (project)
+
+This repository intentionally uses the legacy `.cursorrules` format by request.
+Do not recreate `.cursor/rules/` unless explicitly asked.
+
+## Priority
+- Follow these rules over general habits, but never conflict with system or user instructions.
+
+## Core Goals
+- Keep the plugin stable, testable, and backward compatible.
+- Prefer clear, actionable errors over silent failures.
+- Avoid real network calls in tests; use deterministic mocks.
+
+## Auth & Config
+- Any new auth/config change must update:
+  - `src/environment.ts` schema + validation
+  - `package.json` agentConfig docs
+  - `README.md` setup sections
+  - relevant tests
+- Use `getSetting(runtime, KEY)` for configuration lookups.
+- For missing credentials, throw explicit errors listing **exact** env var names.
+- Broker mode must remain thin: only fetch broker tokens and pass them to Twitter API.
+
+## Error Messaging
+- Errors must include:
+  - The missing env var names
+  - The expected endpoint or next steps
+- For broker 401/403, add a hint to check broker API key and permissions.
+- Prefer `logger.warn` for configuration issues and `logger.error` for failures.
+
+## Tests (strict)
+- All tests must run offline with mocks (no real Twitter API).
+- E2E tests should exercise the full stack with mocked Twitter + mock broker servers.
+- When adding features, include:
+  - Unit tests for core logic
+  - E2E tests for integration paths
+  - Negative tests for misconfiguration
+- Keep E2E tests deterministic and fast.
+
+## Mocking
+- Mock `twitter-api-v2` in tests unless explicitly running a real integration test.
+- Prefer local mock HTTP servers for broker flows.
+- Do not use real API keys in tests or docs.
+
+## Code Style
+- Use TypeScript types for public APIs and new modules.
+- Favor small, composable helpers over large methods.
+- Keep edits minimal and targeted; avoid unrelated refactors.
+- Use ASCII in new code and docs unless existing files require Unicode.
+
+## Documentation
+- When behavior changes, update README and test docs.
+- Keep broker integration instructions up to date.
+- Add usage snippets for any new env vars.
+
+## Security
+- Never log or store secrets in plaintext.
+- Do not embed credentials in tests.
+- Treat broker API keys as sensitive.
+
+## Self‑Updating Rule
+- If you discover new conventions or adjust tooling, update this file in the same change.
+- If rules conflict with project needs, revise `.cursorrules` and explain why.

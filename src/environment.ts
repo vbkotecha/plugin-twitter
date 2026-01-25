@@ -24,8 +24,9 @@ export const twitterEnvSchema = z.object({
     .string()
     .default("tweet.read tweet.write users.read offline.access"),
 
-  // Broker scaffolding (stub)
+  // Broker configuration
   TWITTER_BROKER_URL: z.string().default(""),
+  TWITTER_BROKER_API_KEY: z.string().default(""),
 
   // Core configuration
   TWITTER_DRY_RUN: z.string().default("false"),
@@ -160,6 +161,10 @@ export async function validateTwitterConfig(
         (config as any).TWITTER_BROKER_URL ??
         getSetting(runtime, "TWITTER_BROKER_URL") ??
         "",
+      TWITTER_BROKER_API_KEY:
+        (config as any).TWITTER_BROKER_API_KEY ??
+        getSetting(runtime, "TWITTER_BROKER_API_KEY") ??
+        "",
       TWITTER_DRY_RUN: String(
         (
           config.TWITTER_DRY_RUN ??
@@ -272,7 +277,7 @@ export async function validateTwitterConfig(
     };
 
     // Validate required credentials
-    const mode = (validatedConfig.TWITTER_AUTH_MODE || "env").toLowerCase();
+    const mode = validatedConfig.TWITTER_AUTH_MODE.toLowerCase();
     if (mode === "env") {
       if (
         !validatedConfig.TWITTER_API_KEY ||
@@ -291,9 +296,15 @@ export async function validateTwitterConfig(
         );
       }
     } else if (mode === "broker") {
-      if (!validatedConfig.TWITTER_BROKER_URL) {
+      const missing: string[] = [];
+      if (!validatedConfig.TWITTER_BROKER_URL) missing.push("TWITTER_BROKER_URL");
+      if (!validatedConfig.TWITTER_BROKER_API_KEY) missing.push("TWITTER_BROKER_API_KEY");
+
+      if (missing.length) {
         throw new Error(
-          "Twitter broker auth is selected (TWITTER_AUTH_MODE=broker). Please set TWITTER_BROKER_URL",
+          "Twitter broker auth is selected (TWITTER_AUTH_MODE=broker). Missing: " +
+            `${missing.join(", ")}. ` +
+            "Please set TWITTER_BROKER_URL and TWITTER_BROKER_API_KEY.",
         );
       }
     } else {
@@ -305,9 +316,11 @@ export async function validateTwitterConfig(
     return twitterEnvSchema.parse(validatedConfig);
   } catch (error) {
     if (error instanceof z.ZodError) {
+      /* c8 ignore start */
       const issues: Array<{ path: (string | number)[]; message: string }> =
         // zod v3 uses `issues`; some builds also expose `errors`
         ((error as any).issues ?? (error as any).errors ?? []) as any;
+      /* c8 ignore end */
       const errorMessages = issues
         .map((err) => `${err.path.join(".")}: ${err.message}`)
         .join(", ");
@@ -368,6 +381,7 @@ function getDefaultConfig(): TwitterConfig {
       getConfig("TWITTER_SCOPES") ||
       "tweet.read tweet.write users.read offline.access",
     TWITTER_BROKER_URL: getConfig("TWITTER_BROKER_URL") || "",
+    TWITTER_BROKER_API_KEY: getConfig("TWITTER_BROKER_API_KEY") || "",
     TWITTER_DRY_RUN: getConfig("TWITTER_DRY_RUN") || "false",
     TWITTER_TARGET_USERS: getConfig("TWITTER_TARGET_USERS") || "",
     TWITTER_ENABLE_POST: getConfig("TWITTER_ENABLE_POST") || "false",

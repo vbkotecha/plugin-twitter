@@ -7,25 +7,19 @@ import {
   beforeEach,
   vi,
 } from "vitest";
+import {
+  createMockTwitterApiModule,
+  resetMockTwitterState,
+} from "../helpers/mock-twitter-api";
+
+vi.mock("twitter-api-v2", () => createMockTwitterApiModule());
 import { TwitterMessageService } from "../../services/MessageService";
 import { TwitterPostService } from "../../services/PostService";
 import { ClientBase } from "../../base";
 import { MessageType } from "../../services/IMessageService";
 import { SearchMode } from "../../client";
 import type { IAgentRuntime } from "@elizaos/core";
-import dotenv from "dotenv";
-
-// Load environment variables from .env.test file
-dotenv.config({ path: ".env.test" });
-
-// Skip these tests if no API credentials are provided
-const SKIP_E2E =
-  !process.env.TWITTER_API_KEY ||
-  !process.env.TWITTER_API_SECRET_KEY ||
-  !process.env.TWITTER_ACCESS_TOKEN ||
-  !process.env.TWITTER_ACCESS_TOKEN_SECRET;
-
-describe.skipIf(SKIP_E2E)("Twitter E2E Integration Tests", () => {
+describe("Twitter E2E Integration Tests (Mocked)", () => {
   let client: ClientBase;
   let messageService: TwitterMessageService;
   let postService: TwitterPostService;
@@ -33,6 +27,14 @@ describe.skipIf(SKIP_E2E)("Twitter E2E Integration Tests", () => {
   let testTweetIds: string[] = [];
 
   beforeAll(async () => {
+    resetMockTwitterState();
+
+    process.env.TWITTER_AUTH_MODE = "env";
+    process.env.TWITTER_API_KEY = "mock-api-key";
+    process.env.TWITTER_API_SECRET_KEY = "mock-api-secret";
+    process.env.TWITTER_ACCESS_TOKEN = "mock-access-token";
+    process.env.TWITTER_ACCESS_TOKEN_SECRET = "mock-access-secret";
+
     // Setup runtime mock
     runtime = {
       agentId: "test-agent-123" as any,
@@ -44,7 +46,7 @@ describe.skipIf(SKIP_E2E)("Twitter E2E Integration Tests", () => {
       ensureWorldExists: vi.fn(),
       ensureConnection: vi.fn(),
       createMemory: vi.fn(),
-      getEntityById: vi.fn().mockResolvedValue(null),
+      getEntityById: vi.fn().mockResolvedValue({ names: [], metadata: {} }),
       updateEntity: vi.fn(),
     } as any;
 
@@ -79,8 +81,7 @@ describe.skipIf(SKIP_E2E)("Twitter E2E Integration Tests", () => {
   });
 
   beforeEach(() => {
-    // Add delay between tests to avoid rate limiting
-    return new Promise((resolve) => setTimeout(resolve, 2000));
+    resetMockTwitterState();
   });
 
   describe("Authentication", () => {

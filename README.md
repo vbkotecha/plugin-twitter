@@ -6,31 +6,40 @@ This package provides Twitter/X integration for the Eliza AI agent using the off
 
 **Just want your bot to post tweets? Here's the fastest path:**
 
-1. **Get Twitter Developer account** → https://developer.twitter.com
-2. **Create an app** → Enable "Read and write" permissions
+1. **If you have enterprise/broker access (recommended)**: get a broker URL + API key
+2. **Otherwise BYO developer account**: https://developer.twitter.com (create an app and enable "Read and write")
 3. Choose your auth mode:
 
-   - **Option A (default, legacy): OAuth 1.0a env vars**
-     - API Key & Secret (from "Consumer Keys")
-     - Access Token & Secret (from "Authentication Tokens")
+   - **Option A (broker, enterprise): token broker service**
+     - Broker URL (from your broker deployment)
+     - Broker API Key (agent key issued by the broker)
 
-   - **Option B (recommended): “login + approve” OAuth 2.0 (PKCE)**
+   - **Option B (developer account, recommended): “login + approve” OAuth 2.0 (PKCE)**
      - Client ID (from "OAuth 2.0 Client ID")
      - Redirect URI (loopback recommended)
 
+   - **Option C (developer account, legacy): OAuth 1.0a env vars**
+     - API Key & Secret (from "Consumer Keys")
+     - Access Token & Secret (from "Authentication Tokens")
+
 4. **Add to `.env`:**
    ```bash
-   # Option A: legacy OAuth 1.0a (default)
-   TWITTER_AUTH_MODE=env
-   TWITTER_API_KEY=xxx
-   TWITTER_API_SECRET_KEY=xxx
-   TWITTER_ACCESS_TOKEN=xxx
-   TWITTER_ACCESS_TOKEN_SECRET=xxx
+  # Option A: Broker (recommended for enterprise/shared access)
+  TWITTER_AUTH_MODE=broker
+  TWITTER_BROKER_URL=https://broker.example.com
+  TWITTER_BROKER_API_KEY=xxx
 
-   # Option B: OAuth 2.0 PKCE (interactive login + approve, no client secret)
+  # Option B: OAuth 2.0 PKCE (developer account, interactive login + approve)
    # TWITTER_AUTH_MODE=oauth
    # TWITTER_CLIENT_ID=xxx
    # TWITTER_REDIRECT_URI=http://127.0.0.1:8080/callback
+
+  # Option C: legacy OAuth 1.0a (developer account, default if TWITTER_AUTH_MODE unset)
+  # TWITTER_AUTH_MODE=env
+  # TWITTER_API_KEY=xxx
+  # TWITTER_API_SECRET_KEY=xxx
+  # TWITTER_ACCESS_TOKEN=xxx
+  # TWITTER_ACCESS_TOKEN_SECRET=xxx
 
    TWITTER_ENABLE_POST=true
    TWITTER_POST_IMMEDIATELY=true
@@ -53,19 +62,28 @@ Tip: if you use **OAuth 2.0 PKCE**, the plugin will print an authorization URL o
 
 ## Prerequisites
 
-- Twitter Developer Account with API v2 access
-- Either Twitter OAuth 1.0a credentials (legacy env vars) or OAuth 2.0 Client ID (PKCE)
+- **Enterprise/broker credentials (recommended)** or a **Twitter Developer Account** with API v2 access
+- Either broker credentials, OAuth 2.0 Client ID (PKCE), or OAuth 1.0a credentials (legacy)
 - Node.js and bun installed
 
 ## 🚀 Quick Start
 
-### Step 1: Get Twitter Developer Access
+### Step 1: Get Twitter Access (Broker Recommended)
 
+Choose one path:
+
+**A) Enterprise / broker (recommended)**
+- If Eliza (or your org) provides enterprise Twitter access, request:
+  - `TWITTER_BROKER_URL`
+  - `TWITTER_BROKER_API_KEY`
+- No Twitter developer account is required for broker mode.
+
+**B) BYO Developer Account**
 1. Apply for a developer account at https://developer.twitter.com
 2. Create a new app in the [Developer Portal](https://developer.twitter.com/en/portal/projects-and-apps)
 3. Ensure your app has API v2 access
 
-### Step 2: Configure App Permissions for Posting
+### Step 2: Configure App Permissions for Posting (Developer Account Only)
 
 **⚠️ CRITICAL: Default apps can only READ. You must enable WRITE permissions to post tweets!**
 
@@ -90,9 +108,10 @@ Tip: if you use **OAuth 2.0 PKCE**, the plugin will print an authorization URL o
 
 3. Click **Save**
 
-### Step 3: Get the RIGHT Credentials (OAuth 1.0a)
+### Step 3: Get the RIGHT Credentials (Developer Account Only)
 
 You can use either legacy **OAuth 1.0a** env vars (default) or **OAuth 2.0 PKCE** (“login + approve”).
+If you're using broker mode, skip this section.
 
 In your app's **"Keys and tokens"** page, you'll see several sections. Here's what to use:
 
@@ -128,27 +147,30 @@ In your app's **"Keys and tokens"** page, you'll see several sections. Here's wh
 Create or edit `.env` file in your project root:
 
 ```bash
-# Auth mode (default: env)
-# - env: legacy OAuth 1.0a keys/tokens
+# Auth mode (default in code: env; recommended for enterprise: broker)
+# - broker: token broker service (short-lived OAuth2 access tokens)
 # - oauth: “login + approve” OAuth 2.0 PKCE (no client secret in plugin)
-# - broker: stub (not implemented yet)
-TWITTER_AUTH_MODE=env
+# - env: legacy OAuth 1.0a keys/tokens
 
-# REQUIRED: OAuth 1.0a Credentials (from "Consumer Keys" section)
-TWITTER_API_KEY=your_api_key_here                    # From "API Key"
-TWITTER_API_SECRET_KEY=your_api_key_secret_here      # From "API Key Secret"
+# ---- Recommended (Enterprise/Broker) ----
+TWITTER_AUTH_MODE=broker
+TWITTER_BROKER_URL=https://broker.example.com
+TWITTER_BROKER_API_KEY=your_agent_api_key
 
-# REQUIRED: OAuth 1.0a Tokens (from "Authentication Tokens" section)
-TWITTER_ACCESS_TOKEN=your_access_token_here          # Must have "Read and Write"
-TWITTER_ACCESS_TOKEN_SECRET=your_token_secret_here   # Regenerate after permission change
-
-# ---- OR ----
+# ---- OR (Developer Account) ----
 # OAuth 2.0 PKCE (“login + approve”) configuration:
 # TWITTER_AUTH_MODE=oauth
 # TWITTER_CLIENT_ID=your_oauth2_client_id_here
 # TWITTER_REDIRECT_URI=http://127.0.0.1:8080/callback
 # Optional:
 # TWITTER_SCOPES="tweet.read tweet.write users.read offline.access"
+
+# ---- OR (Developer Account, Legacy OAuth 1.0a) ----
+# TWITTER_AUTH_MODE=env
+# TWITTER_API_KEY=your_api_key_here                    # From "API Key"
+# TWITTER_API_SECRET_KEY=your_api_key_secret_here      # From "API Key Secret"
+# TWITTER_ACCESS_TOKEN=your_access_token_here          # Must have "Read and Write"
+# TWITTER_ACCESS_TOKEN_SECRET=your_token_secret_here   # Regenerate after permission change
 
 # Basic Configuration
 TWITTER_DRY_RUN=false              # Set to true to test without posting
@@ -166,6 +188,11 @@ When using **TWITTER_AUTH_MODE=oauth**, the plugin will:
 - Print an authorization URL on first run
 - Capture the callback via a local loopback server **or** ask you to paste the redirected URL
 - Persist tokens via Eliza runtime cache if available, otherwise a local token file at `~/.eliza/twitter/oauth2.tokens.json`
+
+When using **TWITTER_AUTH_MODE=broker**, the plugin will:
+- Call `GET {TWITTER_BROKER_URL}/v1/twitter/access-token`
+- Send `Authorization: Bearer {TWITTER_BROKER_API_KEY}`
+- Use the returned short-lived OAuth2 access token for Twitter API v2 calls
 
 ### Step 5: Run Your Bot
 
@@ -198,6 +225,21 @@ TWITTER_API_KEY=                    # Consumer API Key
 TWITTER_API_SECRET_KEY=             # Consumer API Secret
 TWITTER_ACCESS_TOKEN=               # Access Token (with write permissions)
 TWITTER_ACCESS_TOKEN_SECRET=        # Access Token Secret
+
+# Auth Mode
+# - env (default): OAuth 1.0a credentials above
+# - oauth: OAuth 2.0 PKCE (client id + redirect uri)
+# - broker: token broker service (short-lived OAuth2 access tokens)
+TWITTER_AUTH_MODE=env
+
+# OAuth 2.0 PKCE
+TWITTER_CLIENT_ID=                  # OAuth 2.0 Client ID (oauth mode)
+TWITTER_REDIRECT_URI=               # Redirect URI (oauth mode)
+TWITTER_SCOPES=                     # Optional, space-separated scopes
+
+# Broker mode
+TWITTER_BROKER_URL=                 # Broker base URL (broker mode)
+TWITTER_BROKER_API_KEY=             # Broker agent API key (broker mode)
 
 # Core Configuration
 TWITTER_DRY_RUN=false              # Set to true for testing without posting
@@ -316,6 +358,9 @@ TWITTER_ENABLE_ACTIONS=false    # Disable timeline actions
 
 ### Want Full Interaction Bot?
 
+If you're using **broker mode**, just set `TWITTER_AUTH_MODE=broker` with your broker URL/API key and keep the feature toggles below.
+The example here shows **developer account** credentials.
+
 ```bash
 # Full interaction setup
 TWITTER_API_KEY=xxx
@@ -345,9 +390,10 @@ TWITTER_POST_IMMEDIATELY=true
 If you see errors like "Failed to create tweet: Request failed with code 403", this usually means:
 
 1. **Missing Write Permissions**: Make sure your Twitter app has "Read and write" permissions
-   - Go to your app settings in the Twitter Developer Portal
+   - Go to your app settings in the Twitter Developer Portal (BYO developer account)
    - Check that App permissions shows "Read and write" ✅
    - If not, change it and regenerate your Access Token & Secret
+   - **Broker/enterprise**: confirm your broker app has write permissions (or ask your broker admin)
 
 2. **Protected Accounts**: The bot may be trying to engage with protected/private accounts
    - The plugin now automatically skips these with a warning
@@ -393,6 +439,10 @@ This usually means your credentials don’t match your selected auth mode.
   - Use OAuth 2.0 **Client ID** (`TWITTER_CLIENT_ID`)
   - Set a loopback redirect URI (`TWITTER_REDIRECT_URI`, e.g. `http://127.0.0.1:8080/callback`)
   - Do not set/ship a client secret (PKCE flow)
+- If `TWITTER_AUTH_MODE=broker`:
+  - Set `TWITTER_BROKER_URL` to your broker base URL
+  - Set `TWITTER_BROKER_API_KEY` to the agent API key issued by the broker
+  - Verify the broker responds at `/v1/twitter/access-token`
 
 ### Bot Not Posting Automatically
 
@@ -406,7 +456,7 @@ This usually means your credentials don’t match your selected auth mode.
 ### Timeline Not Loading
 
 **Common causes:**
-- Rate limiting (check Twitter Developer Portal)
+- Rate limiting (check broker logs or Twitter Developer Portal if BYO)
 - Invalid credentials
 - Account restrictions
 
@@ -415,8 +465,8 @@ This usually means your credentials don’t match your selected auth mode.
 Your tokens may have been revoked or regenerated.
 
 **Solution:**
-1. Go to Twitter Developer Portal
-2. Regenerate all tokens
+1. If **broker mode**: rotate/reissue the broker API key (or ask your broker admin)
+2. If **developer account**: go to Twitter Developer Portal and regenerate tokens
 3. Update `.env`
 4. Restart bot
 
@@ -469,6 +519,22 @@ DEBUG=eliza:* bun start
 TWITTER_DRY_RUN=true bun start
 ```
 
+### Mock broker (local dev)
+
+If you want to test broker mode without a real broker, you can run a local mock broker:
+
+```bash
+bun run mock:broker
+```
+
+Then set:
+
+```bash
+TWITTER_AUTH_MODE=broker
+TWITTER_BROKER_URL=http://127.0.0.1:8787
+TWITTER_BROKER_API_KEY=dev-key
+```
+
 ### Testing Checklist
 
 1. **Test Auth**: Check logs for successful Twitter login
@@ -481,7 +547,7 @@ TWITTER_DRY_RUN=true bun start
 - Store credentials in `.env` file (never commit!)
 - Use `.env.local` for local development
 - Regularly rotate API keys
-- Monitor API usage in Developer Portal
+- Monitor API usage (Developer Portal if BYO, broker logs if enterprise)
 - Enable only necessary permissions
 - Review [Twitter's automation rules](https://help.twitter.com/en/rules-and-policies/twitter-automation)
 
@@ -493,7 +559,9 @@ This plugin uses Twitter API v2 endpoints efficiently:
 - **User Lookups**: Cached to reduce calls
 - **Search**: Configurable intervals
 
-Monitor your usage at: https://developer.twitter.com/en/portal/dashboard
+Monitor your usage:
+- **BYO developer account**: https://developer.twitter.com/en/portal/dashboard
+- **Broker/enterprise**: use your broker's dashboard/logs
 
 ## 📖 Additional Resources
 

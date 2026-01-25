@@ -7,15 +7,17 @@ This guide explains how to test the Twitter plugin after removing username/passw
 The plugin supports multiple auth modes:
 - `TWITTER_AUTH_MODE=env` (legacy OAuth 1.0a keys/tokens)
 - `TWITTER_AUTH_MODE=oauth` (OAuth 2.0 Authorization Code + PKCE, interactive “login + approve”, no client secret)
-- `TWITTER_AUTH_MODE=broker` (stub only, not implemented yet)
+- `TWITTER_AUTH_MODE=broker` (token broker service returning short-lived OAuth2 access tokens)
 
 ## Prerequisites
 
-### 1. Twitter Developer Account
+### 1. Twitter Developer Account (optional)
 
-You need a Twitter Developer account. Which credentials you need depends on auth mode:
+The default E2E suite uses mocked Twitter + broker services, so real credentials
+are not required. If you want to run real Twitter integration tests manually,
+you'll need:
 
-- For `TWITTER_AUTH_MODE=env` (E2E tests use this):
+- For `TWITTER_AUTH_MODE=env`:
   - API Key
   - API Secret Key
   - Access Token
@@ -23,17 +25,14 @@ You need a Twitter Developer account. Which credentials you need depends on auth
 - For `TWITTER_AUTH_MODE=oauth`:
   - OAuth 2.0 Client ID (`TWITTER_CLIENT_ID`)
   - Redirect URI (`TWITTER_REDIRECT_URI`)
+- For `TWITTER_AUTH_MODE=broker`:
+  - Broker URL (`TWITTER_BROKER_URL`)
+  - Broker API key (`TWITTER_BROKER_API_KEY`)
 
-To get these credentials:
+### 2. Environment Setup (optional for real Twitter)
 
-1. Go to https://developer.twitter.com/
-2. Create a developer account (if you don't have one)
-3. Create a new app in the developer portal
-4. Generate API keys and access tokens
-
-### 2. Environment Setup
-
-Create a `.env.test` file in the plugin root directory:
+Create a `.env.test` file in the plugin root directory if you want to run real
+Twitter integration tests:
 
 ```bash
 TWITTER_AUTH_MODE=env
@@ -41,6 +40,22 @@ TWITTER_API_KEY=your_api_key_here
 TWITTER_API_SECRET_KEY=your_api_secret_key_here
 TWITTER_ACCESS_TOKEN=your_access_token_here
 TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret_here
+```
+
+### Mock broker (optional)
+
+For broker mode tests or local smoke runs without a real broker, start the mock broker:
+
+```bash
+npm run mock:broker
+```
+
+Then set:
+
+```bash
+TWITTER_AUTH_MODE=broker
+TWITTER_BROKER_URL=http://127.0.0.1:8787
+TWITTER_BROKER_API_KEY=dev-key
 ```
 
 ## Running Tests
@@ -65,13 +80,13 @@ npm test -- --watch
 
 ### E2E Tests
 
-End-to-end tests require real Twitter API credentials:
+End-to-end tests run against mocked Twitter + broker services by default:
 
 ```bash
-# Run E2E tests (requires .env.test file)
+# Run E2E tests (mocked)
 npm test -- --run e2e
 
-# Skip E2E tests if no credentials
+# Skip E2E tests
 npm test -- --run --exclude="**/e2e/**"
 ```
 

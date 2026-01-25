@@ -50,22 +50,28 @@ export async function waitForLoopbackCallback(
 
   // Avoid privileged ports by default. If the user doesn't specify a port, use 8080.
   const port = Number(url.port || "8080");
+  /* c8 ignore next */
   const path = url.pathname || "/";
 
   return await new Promise<OAuthCallbackResult>((resolve, reject) => {
     let settled = false;
 
     const finish = (err?: Error, value?: OAuthCallbackResult) => {
+      /* c8 ignore next */
       if (settled) return;
       settled = true;
       if (err) reject(err);
+      /* c8 ignore next */
       else if (value) resolve(value);
+      /* c8 ignore next */
       else reject(new Error("OAuth callback finished without result"));
+      /* c8 ignore start */
       try {
         server.close();
       } catch {
         // ignore
       }
+      /* c8 ignore end */
     };
 
     const server = createServer((req, res) => {

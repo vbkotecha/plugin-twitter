@@ -39,7 +39,8 @@
     "lint": "prettier --write ./src",
     "clean": "rm -rf dist .turbo node_modules .turbo-tsconfig.json tsconfig.tsbuildinfo",
     "format": "prettier --write ./src",
-    "format:check": "prettier --check ./src"
+    "format:check": "prettier --check ./src",
+    "mock:broker": "node scripts/mock-broker.mjs"
   },
   "publishConfig": {
     "access": "public"
@@ -54,7 +55,7 @@
     "pluginParameters": {
       "TWITTER_AUTH_MODE": {
         "type": "string",
-        "description": "Auth mode: 'env' (legacy keys/tokens), 'oauth' (3-legged OAuth2 PKCE), or 'broker' (stub).",
+        "description": "Auth mode: 'env' (legacy keys/tokens), 'oauth' (3-legged OAuth2 PKCE), or 'broker' (token broker service).",
         "required": false,
         "default": "env",
         "sensitive": false
@@ -104,9 +105,15 @@
       },
       "TWITTER_BROKER_URL": {
         "type": "string",
-        "description": "Broker URL (required for TWITTER_AUTH_MODE=broker; stub only).",
+        "description": "Broker URL (required for TWITTER_AUTH_MODE=broker).",
         "required": false,
         "sensitive": false
+      },
+      "TWITTER_BROKER_API_KEY": {
+        "type": "string",
+        "description": "Broker agent API key (required for TWITTER_AUTH_MODE=broker).",
+        "required": false,
+        "sensitive": true
       },
       "TWITTER_TARGET_USERS": {
         "type": "string",
