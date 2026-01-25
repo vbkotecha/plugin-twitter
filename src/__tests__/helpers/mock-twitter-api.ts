@@ -109,9 +109,13 @@ class MockTwitterState {
   }
 
   listTweets(): MockTweet[] {
-    return Array.from(this.tweets.values()).sort((a, b) =>
-      a.created_at < b.created_at ? 1 : -1,
-    );
+    return Array.from(this.tweets.values()).sort((a, b) => {
+      if (a.created_at === b.created_at) {
+        if (a.id === b.id) return 0;
+        return a.id < b.id ? -1 : 1;
+      }
+      return a.created_at < b.created_at ? 1 : -1;
+    });
   }
 
   listTweetsByUser(userId: string): MockTweet[] {
